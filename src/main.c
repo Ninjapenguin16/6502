@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     runCPU(cpu);
 
-    printf("%u", cpu->X);
+    printf("%u\n", cpu->X);
 
     free(cpu);
 
