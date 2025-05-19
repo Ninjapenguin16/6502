@@ -22,6 +22,12 @@ TARGET := $(BUILD_DIR)/6502
 
 all: $(TARGET)
 
+ifeq ($(OS),Windows_NT)
+    RM := del /Q
+else
+    RM := rm -f
+endif
+
 # Link final binary using g++ to include C++ standard library
 $(TARGET): $(OBJS)
 	$(CXX) -o $@ $^
@@ -39,4 +45,4 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 clean:
-	rm $(BUILD_DIR)/*
+	$(RM) $(BUILD_DIR)/*
