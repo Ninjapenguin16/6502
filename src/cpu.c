@@ -20,7 +20,7 @@ CPU* setupCPU() {
     cpu->A = 0;
     cpu->X = 0;
     cpu->Y = 0;
-    cpu->SP = 0;
+    cpu->SP = 0xFF;
     cpu->PC = 0;
     cpu->P = 0;
 
@@ -63,6 +63,28 @@ void setFlag(uint8_t* flags, uint8_t mask, bool condition) {
         *flags &= ~mask;
     }
 }
+
+void push(CPU* cpu, uint8_t value) {
+    memory[0x0100 + cpu->SP] = value;
+    cpu->SP--;
+}
+
+uint8_t pull(CPU* cpu) {
+    cpu->SP++;
+    return memory[0x0100 + cpu->SP];
+}
+
+void push16(CPU* cpu, uint16_t value) {
+    push(cpu, (value >> 8) & 0xFF); // High byte
+    push(cpu, value & 0xFF); // Low byte
+}
+
+uint16_t pull16(CPU* cpu) {
+    uint8_t low = pull(cpu);
+    uint8_t high = pull(cpu);
+    return ((uint16_t)high << 8) | low;
+}
+
 
 void runCPU(CPU* cpu) {
     // Fetch, Decode, Execute loop
@@ -189,13 +211,34 @@ void runCPU(CPU* cpu) {
                     setFlag(&cpu->P, ZeroFlag, cpu->A == 0);
                     setFlag(&cpu->P, NegativeFlag, cpu->A & 0b10000000);
                     break;
+                case 0x48: // PHA
+                    push(cpu, cpu->A);
+                    break;
+                case 0x08: // PHP
+                    push(cpu, cpu->P);
+                    break;
+                case 0x68: // PLA
+                    temp = pull(cpu);    
+                    setFlag(&cpu->P, ZeroFlag, temp == 0);
+                    setFlag(&cpu->P, NegativeFlag, temp & 0b10000000);
+                    cpu->A = temp;
+                    break;
+                case 0x28: // PLP
+                    cpu->P = pull(cpu);
+                    break;
                 case 0x2A: // ROL
                     temp = cpu->A & 0b10000000;
                     cpu->A = cpu->A << 1;
+                    cpu->A += carrySet(cpu->P);
                     setFlag(&cpu->P, CarryFlag, temp);
-                    cpu->A += (temp >> 7);
+                    setFlag(&cpu->P, NegativeFlag, cpu->A & 0b10000000);
                     break;
-                case 0x6A:
+                case 0x6A: // ROR
+                    temp = cpu->A & 0b00000001;
+                    cpu->A = cpu->A >> 1;
+                    cpu->A |= (carrySet(cpu->P) << 7);
+                    setFlag(&cpu->P, CarryFlag, temp);
+                    setFlag(&cpu->P, NegativeFlag, cpu->A & 0b10000000);
                     break;
                 case 0xFF: // THIS IS NOT REAL AND JUST FOR TESTING, CHANGE LATER
                     return;

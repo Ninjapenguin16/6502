@@ -23,9 +23,11 @@ TARGET := $(BUILD_DIR)/6502
 all: $(TARGET)
 
 ifeq ($(OS),Windows_NT)
-    RM := del /Q
+    RMDIR := rmdir /s /q
+	MKDIR := mkdir
 else
-    RM := rm -f
+    RMDIR := rm -rf
+	MKDIR := mkdir -p
 endif
 
 # Link final binary using g++ to include C++ standard library
@@ -42,7 +44,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 
 # Ensure build directory exists
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+	$(MKDIR) $(BUILD_DIR)
 
 clean:
-	$(RM) $(BUILD_DIR)/*
+	$(RMDIR) $(BUILD_DIR)
